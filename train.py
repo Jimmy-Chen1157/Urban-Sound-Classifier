@@ -12,7 +12,7 @@ LEARNING_RATE = 0.001
 SAVE_PATH = "/UrbanSoundClassifier/CNN_audio_classification.pth"
 ANNOTATIONS_FILE = "/datasets/UrbanSound8K/UrbanSound8K/metadata/UrbanSound8K.csv"
 AUDIO_DIR = "/datasets/UrbanSound8K/UrbanSound8K/audio"
-SAMPLE_RATE = 22050
+SAMPLE_RATE = 22050  # Nyquist frequency for CD
 NUM_SAMPLES = 22050
 
 
