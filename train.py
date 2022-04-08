@@ -1,6 +1,7 @@
 import torch
 from torch import nn
 import torchaudio
+from torch.utils.tensorboard import SummaryWriter
 from torch.utils.data import DataLoader
 from urbansounddataset import UrbanSoundDataset
 from CNN import CNN
@@ -41,10 +42,12 @@ cnn = CNN().to(device)
 loss_fn = nn.CrossEntropyLoss()
 optimiser = torch.optim.Adam(cnn.parameters(),
                              lr=LEARNING_RATE)
+writer = SummaryWriter(f"runs/UrbanSoundClassifier/UrbanSoundDataset")
 
 
 if __name__ == "__main__":
 
+    step = 0
     for i in range(EPOCHS):
         print("Epochs {}".format(i + 1))
         for inputs, targets in train_data_loader:
@@ -56,6 +59,9 @@ if __name__ == "__main__":
             optimiser.zero_grad()
             loss.backward()
             optimiser.step()
+
+            writer.add_scalar("Training Loss", loss, global_step=step)
+            step += 1
 
         print("Loss: {}".format(loss.item()))
         print("----------------------")
