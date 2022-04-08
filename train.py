@@ -16,63 +16,50 @@ SAMPLE_RATE = 22050
 NUM_SAMPLES = 22050
 
 
-def train_one_epoch(model, data_loader, loss_fn, optimiser, device):
-    for inputs, targets in data_loader:
-        inputs, targets = inputs.to(device), targets.to(device)
+mel_spectrogram = torchaudio.transforms.MelSpectrogram(
+    sample_rate=SAMPLE_RATE,
+    n_fft=1024,
+    hop_length=512,
+    n_mels=64
+)
 
-        # calculate loss
-        predictions = model(inputs)
-        loss = loss_fn(predictions, targets)
-
-        # backpropagate loss and update weights
-        optimiser.zero_grad()
-        loss.backward()
-        optimiser.step()
-
-    print("Loss: {}".format(loss.item()))
+usd = UrbanSoundDataset(
+    ANNOTATIONS_FILE,
+    AUDIO_DIR,
+    mel_spectrogram,
+    SAMPLE_RATE,
+    NUM_SAMPLES
+)
 
 
-def train(model, data_loader, loss_fn, optimiser, device, epochs):
-    for i in range(epochs):
-        print("Epochs {}".format(i + 1))
-        train_one_epoch(model, data_loader, loss_fn, optimiser, device)
-        print("----------------------")
-    print("Training is done")
+train_data_loader = DataLoader(usd, batch_size=BATCH_SIZE)
+
+device = "cuda" if torch.cuda.is_available() else "cpu"
+
+cnn = CNN().to(device)
+
+loss_fn = nn.CrossEntropyLoss()
+optimiser = torch.optim.Adam(cnn.parameters(),
+                             lr=LEARNING_RATE)
 
 
 if __name__ == "__main__":
 
-    mel_spectrogram = torchaudio.transforms.MelSpectrogram(
-        sample_rate=SAMPLE_RATE,
-        n_fft=1024,
-        hop_length=512,
-        n_mels=64
-    )
+    for i in range(EPOCHS):
+        print("Epochs {}".format(i + 1))
+        for inputs, targets in train_data_loader:
+            inputs, targets = inputs.to(device), targets.to(device)
 
-    usd = UrbanSoundDataset(
-        ANNOTATIONS_FILE,
-        AUDIO_DIR,
-        mel_spectrogram,
-        SAMPLE_RATE,
-        NUM_SAMPLES
-    )
+            predictions = cnn(inputs)
+            loss = loss_fn(predictions, targets)
 
-    # create a data loader for the train dataset
-    train_data_loader = DataLoader(usd, batch_size=BATCH_SIZE)
+            optimiser.zero_grad()
+            loss.backward()
+            optimiser.step()
 
-    # build model
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    print("using {}".format(device))
-    cnn = CNN().to(device)
-
-    # instantiate loss function + optimiser
-    loss_fn = nn.CrossEntropyLoss()
-    optimiser = torch.optim.Adam(cnn.parameters(),
-                                 lr=LEARNING_RATE)
-
-    # train model
-    train(cnn, train_data_loader, loss_fn, optimiser, device,
-          EPOCHS)
+        print("Loss: {}".format(loss.item()))
+        print("----------------------")
+    print("Training is done")
 
     torch.save(cnn.state_dict(), SAVE_PATH)
     print("Model trained and stored at CNN_audio_classification.pth")

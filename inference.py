@@ -22,7 +22,6 @@ def predict(model, input, target, class_mapping):
     model.eval()
     with torch.no_grad():
         predictions = model(input)
-        # Tensor (1,10) -> [[0.1, 0.01, ...., 0.6]]
         predicted_index = predictions[0].argmax(0)
         predicted = class_mapping[predicted_index]
         expected = class_mapping[target]
@@ -30,7 +29,7 @@ def predict(model, input, target, class_mapping):
 
 
 if __name__ == "__main__":
-    # load back the model
+
     cnn = CNN()
     state_dict = torch.load(SAVE_PATH)
     cnn.load_state_dict(state_dict)
@@ -50,11 +49,9 @@ if __name__ == "__main__":
         NUM_SAMPLES
     )
 
-    # get a sample from the validation dataset for inference
     input, target = usd[0][0], usd[0][1]
     input.unsqueeze_(0)
 
-    # make inference
     predicted, expected = predict(cnn, input, target,
                                   class_mapping)
     print("predicted: {}, Expected: {}".format(predicted, expected))
